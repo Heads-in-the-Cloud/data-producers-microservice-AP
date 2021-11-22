@@ -47,5 +47,7 @@ def main():
         response = requests.post(args.host + "/users", data=user, headers=headers)
         print("Created new user -> status: " + str(response.status_code))
 
+        print("Username: " + str(json.loads(user)["username"]) + "\nPassword: " + str(json.loads(user)["password"]))
+
 if __name__ == "__main__":
     main()
