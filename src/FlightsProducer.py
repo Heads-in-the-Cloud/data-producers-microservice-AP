@@ -21,7 +21,7 @@ def add_airplane_types(args: Namespace) -> None:
             dict_val = dict(row)
             current_type = AirplaneType(dict_val["max_capacity"])
 
-            post_response = requests.post(
+            post_response: Response = requests.post(
                 args.host + "/airplane-types",
                 data=json.dumps(current_type.__dict__),
                 headers=headers
@@ -33,7 +33,7 @@ def add_airplanes(args: Namespace) -> None:
     """Adds Airplanes via the Rest APIs"""
 
     for _ in range(args.count):
-        post_request = requests.post(
+        post_request: Response = requests.post(
             args.host + "/airplanes",
             data=json.dumps({ "airplaneType" : { "id" : args.type_id }}),
             headers=headers
@@ -55,13 +55,13 @@ def add_airports(args: Namespace) -> None:
             dict_val = dict(row)
 
             current_airport = Airport(dict_val["iata_code"], dict_val["city"])
-            response = requests.get(
+            response: Response = requests.get(
                 args.host + "/airports/" + dict_val["iata_code"],
                 headers=headers
             )
 
             if (response.status_code != 200):
-                post_response = requests.post(
+                post_response: Response = requests.post(
                     args.host + "/airports",
                     data=json.dumps(current_airport.__dict__),
                     headers=headers
@@ -81,7 +81,7 @@ def add_routes(args: Namespace) -> None:
 
             route = Route(origin.__dict__, destination.__dict__)
 
-            post_response = requests.post(
+            post_response: Response = requests.post(
                 args.host + "/routes",
                 data=json.dumps(route.__dict__),
                 headers=headers
@@ -100,43 +100,46 @@ def add_flights(args: Namespace) -> None:
         headers=headers
     ).json()]
 
+    if (len(aiplane_ids) < 1):
+        print("Cannot create flights without airplanes!")
+        exit(0)
+
     # Puts all the airplane routes in a list
     route_ids: list[int] = [x["id"] for x in requests.get(
         args.host + "/routes",
         headers=headers
     ).json()]
 
-    current_date_time = args.departure_date.replace(second=0, microsecond=0)
+    if (len(route_ids) < 1):
+        print("Cannot create flights without airplanes!")
+        exit(0)
 
-    print(aiplane_ids)
-    print(route_ids)
-    print(current_date_time)
+    # Cleans up the date to be of a proper format for Json
+    current_date_time: str = args.departure_date.replace(
+        second=0,
+        microsecond=0
+    ).strftime('%Y-%m-%dT%H:%M:%S.%f')
 
-    # flight1: Flight = Flight(
-    #     seatPrice=0,
-    #     reservedSeats=0,
-    #     departureTime=datetime(2021, 11, 14, 12, 0, 0),
-    #     airplane= {
-    #         "id" : 0
-    #     },
-    #     route= {
-    #         "id" : 0
-    #     }
-    # )
+    for _ in range(args.count):
+        # Gets random ids from the given list
+        airplane_id = random.randint(1, len(aiplane_ids) - 1)
+        route_id = random.randint(1, len(route_ids) - 1)
 
-    """
-    {
-        "seatPrice" : 50,
-        "reservedSeats" : 10,
-        "departureTime" : "2021-11-14T12:00:00",
-        "airplane" : {
-            "id": 1
-        },
-        "route" : {
-            "id": 1
-        }
-    }
-    """
+        flight: Flight = Flight(
+            seatPrice = random.randint(100, 500),
+            reservedSeats = 0,
+            departureTime = current_date_time,
+            airplane = { "id" : airplane_id },
+            route = { "id" : route_id }
+        )
+
+        post_response: Response = requests.post(
+            args.host + "/flights",
+            headers=headers,
+            data=json.dumps(flight.__dict__)
+        )
+
+        print("Post Status: " + str(post_response.status_code))
 
 # endregion
 
@@ -164,7 +167,7 @@ def main() -> None:
     routes_func.set_defaults(func=add_routes)
 
     flight_func = subparsers.add_parser("add-flights", help="Creates random flights")
-    flight_func.add_argument("--departure-date", type=str, default=(datetime.now().replace(minute=0) + timedelta(7)))
+    flight_func.add_argument("--departure-date", type=str, default=(datetime.now() + timedelta(7)))
     flight_func.add_argument("--count", type=int, default=1)
     flight_func.set_defaults(func=add_flights)
 
