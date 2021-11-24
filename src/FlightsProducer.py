@@ -1,10 +1,15 @@
-import json, requests, argparse, csv, random
-from faker import Faker
+import argparse
+import csv
+import json
+import random
+from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
 
+import requests
+from faker import Faker
 from requests.models import Response
-from ProducerTypes import Airplane, AirplaneType, Airport, Route, Flight
-from argparse import Namespace, ArgumentParser
+
+from ProducerTypes import Airplane, AirplaneType, Airport, Flight, Route
 
 fake = Faker()
 headers = { 'Content-Type': 'application/json' }
