@@ -1,12 +1,33 @@
 import argparse
 import json
+from http.client import responses
 
 import requests
-from ProducerTypes import role_types
 from faker import Faker
+
+from ProducerTypes import role_types
 
 fake = Faker()
 headers = {'Content-Type': 'application/json'}
+
+
+# region: public functions
+def get_auth(args):
+    """Gets the authorization header to properly access the Rest APIs"""
+
+    response = requests.post(
+        args.host + "/login",
+        data=json.dumps({
+            "username" : "admin",
+            "password" : "admin"
+        })
+    )
+
+    print("Authorizing...")
+    print(f"Status: {responses[response.status_code]}\n")
+    print(f"Token: {response.headers['Authorization']}\n")
+
+    headers["Authorization"] = response.headers["Authorization"]
 
 
 def verify_roles_exist(hostname="http://localhost:8080"):
@@ -15,13 +36,14 @@ def verify_roles_exist(hostname="http://localhost:8080"):
         request = requests.get(
             hostname + "/user-roles/" + str(role_types[role]))
 
-        print("\t" + role + ", status: " + str(request.status_code))
+        print(f"\t{role}, status: {responses[request.status_code]}")
 
         if (request.status_code != 200):
             print("Since the role was not found, making new role!")
             postReq = requests.post(
                 hostname + "/user-roles", data=json.dumps({'name': role}), headers=headers)
             print(postReq.text)
+# endregion
 
 
 def main():
@@ -33,6 +55,7 @@ def main():
                         choices=role_types.keys(), default="AGENT")
     args = parser.parse_args()
 
+    get_auth(args)
     verify_roles_exist(args.host)
 
     for _ in range(args.userscount):
@@ -48,10 +71,8 @@ def main():
 
         response = requests.post(args.host + "/users",
                                  data=user, headers=headers)
-        print("Created new user -> status: " + str(response.status_code))
-
-        print("Username: " + str(json.loads(user)
-              ["username"]) + "\nPassword: " + str(json.loads(user)["password"]))
+        print(f"Created new user -> status: {responses[response.status_code]}")
+        print(f"Username: {json.loads(user)['username']}\nPassword: {json.loads(user)['password']}\n")
 
 
 if __name__ == "__main__":

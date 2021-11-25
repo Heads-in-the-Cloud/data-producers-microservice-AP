@@ -5,13 +5,13 @@ import random
 from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
 from distutils.util import strtobool
+from http.client import responses
 
 import requests
 from faker import Faker
 from requests.models import Response
-from ProducerTypes import role_types
 
-from ProducerTypes import*
+from ProducerTypes import *
 
 fake = Faker()
 headers = { 'Content-Type': 'application/json' }
@@ -22,12 +22,16 @@ def get_auth(args):
     """Gets the authorization header to properly access the Rest APIs"""
 
     response = requests.post(
-        args.user_host + "/login",
+        args.host + "/login",
         data=json.dumps({
             "username" : "admin",
             "password" : "admin"
         })
     )
+
+    print("Authorizing...")
+    print(f"Status: {responses[response.status_code]}\n")
+    print(f"Token: {response.headers['Authorization']}\n")
 
     headers["Authorization"] = response.headers["Authorization"]
 
@@ -41,15 +45,13 @@ def add_bookings(args: Namespace) -> None:
         confirmation_code = str(random.randrange(10 ** 5, 10 ** 6))
         booking: Booking = Booking(args.is_active, confirmation_code)
 
-        print(json.dumps(booking.__dict__))
-
         post_request: Response = requests.post(
             args.booking_host + "/bookings",
             data=json.dumps(booking.__dict__),
             headers=headers
         )
 
-        print("Post Status: " + str(post_request.status_code))
+        print("Post Status: " + responses[post_request.status_code])
         if (post_request.status_code == 400):
             exit(0)
 
@@ -81,7 +83,7 @@ def add_agents(args: Namespace) -> None:
             headers=headers
         )
 
-        print("Post Status: " + str(post_request.status_code))
+        print("Post Status: " + responses[post_request.status_code])
 
 
 
@@ -108,7 +110,7 @@ def add_guests(args: Namespace) -> None:
             headers=headers
         )
 
-        print("Post Status: " + str(post_request.status_code))
+        print("Post Status: " + responses[post_request.status_code])
 
 
 def add_users(args: Namespace) -> None:
@@ -138,7 +140,7 @@ def add_users(args: Namespace) -> None:
             headers=headers
         )
 
-        print("Post Status: " + str(post_request.status_code))
+        print("Post Status: " + responses[post_request.status_code])
 
 
 def add_payments(args: Namespace) -> None:
@@ -164,7 +166,7 @@ def add_payments(args: Namespace) -> None:
             headers=headers
         )
 
-        print("Post Status: " + str(post_request.status_code))
+        print("Post Status: " + responses[post_request.status_code])
 
 
 def add_passengers(args: Namespace) -> None:
@@ -190,15 +192,13 @@ def add_passengers(args: Namespace) -> None:
 
         passenger: Passenger = Passenger(booking, given_name, family_name, dob, gender, address)
 
-        print(json.dumps(passenger.__dict__))
-
         post_request: Response = requests.post(
             args.booking_host + "/passengers",
             data=json.dumps(passenger.__dict__),
             headers=headers
         )
 
-        print("Post Status: " + str(post_request.status_code))
+        print("Post Status: " + responses[post_request.status_code])
 # endregion
 
 
