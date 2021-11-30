@@ -205,8 +205,11 @@ def main() -> None:
     flight_func.add_argument("--departure-date", type=str, default=(datetime.now() + timedelta(7)))
     flight_func.set_defaults(func=add_flights)
 
-    args = parser.parse_args()
-    args.func(args)
+    try:
+        args = parser.parse_args()
+        args.func(args)
+    except AttributeError:
+        parser.print_help()
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ def get_auth(args):
     """Gets the authorization header to properly access the Rest APIs"""
 
     response = requests.post(
-        args.host + "/login",
+        args.user_host + "/login",
         data=json.dumps({
             "username" : "admin",
             "password" : "admin"
@@ -102,15 +102,15 @@ def add_guests(args: Namespace) -> None:
         email: int = fake.email()
         phone: int = fake.phone_number()
 
-        guest: BookingGuest = BookingGuest(email, phone)
+        guest: BookingGuest = BookingGuest(booking, email, phone)
 
         post_request: Response = requests.post(
-            f"{args.booking_host}/booking-guests/{booking}",
+            f"{args.booking_host}/booking-guests",
             data=json.dumps(guest.__dict__),
             headers=headers
         )
 
-        print("Post Status: " + responses[post_request.status_code])
+        print("Post Status: " + str(post_request.status_code) + "-" + responses[post_request.status_code])
 
 
 def add_users(args: Namespace) -> None:
@@ -199,6 +199,35 @@ def add_passengers(args: Namespace) -> None:
         )
 
         print("Post Status: " + responses[post_request.status_code])
+
+
+def add_flight_bookings(args: Namespace) -> None:
+    """Adds flight bookigns via the Rest APIs"""
+
+    get_auth(args)
+
+    # Gets all the bookings using a list comprehesion while discarding the id field
+    bookings: list[int] = [list(x.values())[0]
+        for x in requests.get(args.booking_host + "/bookings", headers=headers)
+            .json()]
+
+    flights: list[int] = [list(x.values())[0]
+    for x in requests.get(args.flight_host + "/flights", headers=headers)
+        .json()]
+
+    for _ in range(args.count):
+        booking: int = bookings[random.randint(0, len(bookings) - 1)]
+        flight: int = flights[random.randint(0, len(flights) - 1)]
+
+        flight_bookings: FlightBookings = FlightBookings(flight, booking)
+
+        post_request: Response = requests.post(
+            args.booking_host + "/flight-bookings",
+            data=json.dumps(flight_bookings.__dict__),
+            headers=headers
+        )
+
+        print("Post Status: " + responses[post_request.status_code])
 # endregion
 
 
@@ -234,8 +263,15 @@ def main() -> None:
     passengers_func.add_argument("--count", type=int, default=1)
     passengers_func.set_defaults(func=add_passengers)
 
-    args = parser.parse_args()
-    args.func(args)
+    flight_bookings_func = subparsers.add_parser("add-flight-bookings", help="Adds flight bookings of a certain type")
+    flight_bookings_func.add_argument("--count", type=int, default=1)
+    flight_bookings_func.set_defaults(func=add_flight_bookings)
+
+    try:
+        args = parser.parse_args()
+        args.func(args)
+    except AttributeError:
+        parser.print_help()
 
 
 if __name__ == "__main__":

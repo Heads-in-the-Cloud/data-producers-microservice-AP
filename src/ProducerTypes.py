@@ -3,10 +3,10 @@
 from datetime import datetime, timedelta
 
 role_types = {
-    "AGENT": 0,
-    "USER": 1,
-    "GUEST": 2,
-    "ADMIN": 3
+    "AGENT": 1,
+    "USER": 2,
+    "GUEST": 3,
+    "ADMIN": 4
 }
 
 
@@ -70,7 +70,8 @@ class BookingAgent:
 
 
 class BookingGuest:
-    def __init__(self, email: str, phone: str) -> None:
+    def __init__(self, booking: Booking, email: str, phone: str) -> None:
+        self.booking = booking
         self.email = email
         self.phone = phone
 
